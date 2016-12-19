@@ -7,7 +7,7 @@ STOP_CHAR = u' ###STOP##'
 
 AMOUNT_TRAIN = 10
 
-CONTEXT_LENGTH = 80
+CONTEXT_LENGTH = 60
 
 def get_sentences():
   sentences = []

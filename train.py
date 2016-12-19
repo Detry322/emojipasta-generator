@@ -10,9 +10,9 @@ MAX_GENERATED = 2000
 
 def get_model(length, reverse_char_dict):
   model = Sequential()
-  model.add(Embedding(len(reverse_char_dict) + 1, 100, mask_zero=True, input_length=length))
-  model.add(LSTM(100))
-  model.add(Dense(100))
+  model.add(Embedding(len(reverse_char_dict) + 1, 64, mask_zero=True, input_length=length))
+  model.add(LSTM(128))
+  model.add(Dense(64))
   model.add(Dropout(0.2))
   model.add(Dense(len(reverse_char_dict), activation='softmax'))
   model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -36,11 +36,10 @@ def get_prediction(class_probabilities):
   return list(class_probabilities).index(max(class_probabilities))
 
 def generate_sentence(model, length, cdata):
-  length = 0
   prediction = cdata[0][START_CHAR]
   last_input = np.zeros(CONTEXT_LENGTH)
   results = [prediction]
-  while prediction != cdata[0][STOP_CHAR] and length < MAX_GENERATED:
+  while prediction != cdata[0][STOP_CHAR] and len(results) < MAX_GENERATED:
     first_zero = next((i for i, value in enumerate(last_input) if value == 0), None)
     if first_zero is not None:
       input_data = last_input
