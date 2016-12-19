@@ -7,6 +7,8 @@ STOP_CHAR = u' ###STOP##'
 
 AMOUNT_TRAIN = 10
 
+CONTEXT_LENGTH = 80
+
 def get_sentences():
   sentences = []
   with open('posts.json', 'r') as f:
@@ -14,7 +16,7 @@ def get_sentences():
     for _, post in data.iteritems():
       sentences.append(post['data']['title'])
       sentences.append(post['data']['selftext'])
-  return filter(lambda x: 10 <= len(x) <= 2000, sentences)
+  return filter(lambda s: 10 <= len(s) <= 2000, sentences)
 
 def split_sentence(sentence):
   clusters = grapheme_clusters(sentence)
@@ -40,20 +42,24 @@ def create_dataset_generator(split_sentences, cdata, max_len):
     for sentence in split_sentences:
       data = []
       for i in range(len(sentence) + 1):
-        answer = STOP_CHAR if i == len(sentence) else sentence[i]
-        answer_array = [0]*len(reverse_char_dict)
-        answer_array[character_dict[answer]] = 1
-        question = [character_dict[START_CHAR]]
-        question.extend((character_dict[c] if c in character_dict else -1) for c in sentence[:i])
-        question.extend([0]*max_len)
-        question = question[:max_len]
-        data.append((np.array(question), np.array(answer_array)))
+        answer_char = STOP_CHAR if i == len(sentence) else sentence[i]
+        answer = np.zeros(len(reverse_char_dict))
+        answer[character_dict[answer_char]] = 1
+        base = np.zeros(max_len)
+        index = 0
+        for j in range(i-CONTEXT_LENGTH,i):
+          if j < -1:
+            continue
+          new_char = START_CHAR if j == -1 else sentence[j]
+          base[index] = character_dict[new_char]
+          index += 1
+        data.append((base, answer))
       yield transpose(data)
 
 def dataset_length(split_sentences):
   total = 0
   for sentence in split_sentences:
-    total += len(sentence) + 1
+    total += max(len(sentence) - CONTEXT_LENGTH + 1, 1)
   return total
 
 def dataset_generator_factory(split_sentences, cdata, max_len):
@@ -65,7 +71,7 @@ def get_data():
   sentences = get_sentences()
   print "Splitting sentences..."
   split_sentences = [split_sentence(sentence) for sentence in sentences]
-  max_len = max(len(s) for s in split_sentences) + 2
+  max_len = CONTEXT_LENGTH
   print "Creating character mappings..."
   cdata = characters(split_sentences)
   print "Creating train/validate sets..."
