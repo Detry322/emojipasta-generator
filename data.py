@@ -37,7 +37,7 @@ def transpose(data):
 def create_dataset_generator(split_sentences, cdata, max_len):
   character_dict, reverse_char_dict = cdata
   while True:
-    for sentence in enumerate(split_sentences):
+    for sentence in split_sentences:
       data = []
       for i in range(len(sentence) + 1):
         answer = STOP_CHAR if i == len(sentence) else sentence[i]
@@ -46,7 +46,7 @@ def create_dataset_generator(split_sentences, cdata, max_len):
         question = [character_dict[START_CHAR]]
         question.extend((character_dict[c] if c in character_dict else -1) for c in sentence[:i])
         question.extend([0]*max_len)
-        question = question[:max_len + 2]
+        question = question[:max_len]
         data.append((np.array(question), np.array(answer_array)))
       yield transpose(data)
 
@@ -65,12 +65,11 @@ def get_data():
   sentences = get_sentences()
   print "Splitting sentences..."
   split_sentences = [split_sentence(sentence) for sentence in sentences]
-  max_len = max(len(s) for s in split_sentences)
+  max_len = max(len(s) for s in split_sentences) + 2
   print "Creating character mappings..."
   cdata = characters(split_sentences)
-  print "Creating dataset..."
-  random.shuffle(split_sentences)
   print "Creating train/validate sets..."
+  random.shuffle(split_sentences)
   train_sentences, validate_sentences = split_sentences[len(split_sentences)/AMOUNT_TRAIN:], split_sentences[:len(split_sentences)/AMOUNT_TRAIN]
   train = dataset_generator_factory(train_sentences, cdata, max_len)
   validate = dataset_generator_factory(validate_sentences, cdata, max_len)

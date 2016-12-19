@@ -52,6 +52,9 @@ def generate_sentence(model, length, cdata):
 
 if __name__ == '__main__':
   train, validate, max_len, cdata = get_data()
+  print "Creating model..."
   model = get_model(max_len, cdata[1])
+  print "Training model..."
   train_model(model, train, validate)
+  print "Generating sentence..."
   print generate_sentence(model, max_len, cdata)
